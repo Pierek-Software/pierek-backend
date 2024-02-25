@@ -1,0 +1,50 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to EC2, build image, get secrets, update container, remove repo
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          script_stop: true
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            rm -r pierek-backend
+            git clone git@github.com:Pierek-Software/pierek-backend.git
+            cd pierek-backend
+            DATABASE_HOST=$(aws secretsmanager get-secret-value --secret-id pierek-backend-prod --query SecretString --output text | jq -r '.DATABASE_HOST')
+            DATABASE_PORT=$(aws secretsmanager get-secret-value --secret-id pierek-backend-prod --query SecretString --output text | jq -r '.DATABASE_PORT')
+            DATABASE_USER=$(aws secretsmanager get-secret-value --secret-id pierek-backend-prod --query SecretString --output text | jq -r '.DATABASE_USER')
+            DATABASE_PASSWORD=$(aws secretsmanager get-secret-value --secret-id pierek-backend-prod --query SecretString --output text | jq -r '.DATABASE_PASSWORD')
+            DATABASE_DATABASE=$(aws secretsmanager get-secret-value --secret-id pierek-backend-prod --query SecretString --output text | jq -r '.DATABASE_DATABASE')
+            ADMIN_KEY=$(aws secretsmanager get-secret-value --secret-id pierek-backend-prod --query SecretString --output text | jq -r '.ADMIN_KEY')
+            PORT=$(aws secretsmanager get-secret-value --secret-id pierek-backend-prod --query SecretString --output text | jq -r '.PORT')
+
+            docker build -t pierek-backend .
+            docker rm -f pierek-backend-container
+            docker run --restart always -d \
+            -p 3000:3000 \
+            --name pierek-backend-container \
+            -e DATABASE_HOST=$DATABASE_HOST \
+            -e DATABASE_PORT=$DATABASE_PORT \
+            -e DATABASE_USER=$DATABASE_USER \
+            -e DATABASE_PASSWORD=$DATABASE_PASSWORD \
+            -e DATABASE_DATABASE=$DATABASE_DATABASE \
+            -e ADMIN_KEY=$ADMIN_KEY \
+            -e PORT=$PORT \
+            pierek-backend:latest

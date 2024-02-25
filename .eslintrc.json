@@ -1,0 +1,34 @@
+{
+  "extends": ["eslint:recommended", "plugin:prettier/recommended", "plugin:@typescript-eslint/recommended"],
+  "plugins": ["prettier", "@typescript-eslint"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
+  "env": {
+    "node": true
+  },
+  "rules": {
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "CallExpression[callee.property.name='only']",
+        "message": "Using .only in tests is not allowed"
+      }
+    ],
+    "no-console": "error",
+    "no-await-in-loop": "error",
+    "no-constructor-return": "error",
+    "no-duplicate-imports": "error",
+    "no-new-native-nonconstructor": "error",
+    "no-self-compare": "error",
+    "no-template-curly-in-string": "error",
+    "no-unmodified-loop-condition": "error",
+    "no-unreachable-loop": "error",
+    "no-unused-private-class-members": "error",
+    "no-use-before-define": "error",
+    "curly": "error",
+    "eqeqeq": "error",
+    "no-prototype-builtins": "off"
+  }
+}
